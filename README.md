@@ -1,71 +1,56 @@
-<<<<<<< HEAD
-# **Finding Lane Lines on the Road** 
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+# Finding Lane Lines on the Road
 
-<img src="examples/laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
 
-Overview
 ---
 
-When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
+## Objective
 
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
+The objective of this project is to build a pipeline that finds lane lines on the road. In addition, i would use this report to reflect on the key lessons from my work.
 
-To complete the project, two files will be submitted: a file containing project code and a file containing a brief write up explaining your solution. We have included template files to be used both for the [code](https://github.com/udacity/CarND-LaneLines-P1/blob/master/P1.ipynb) and the [writeup](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md).The code file is called P1.ipynb and the writeup template is writeup_template.md 
-
-To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
-
-
-Creating a Great Writeup
----
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
-
-1. Describe the pipeline
-
-2. Identify any shortcomings
-
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
-
-
-The Project
 ---
 
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you should install the starter kit to get started on this project. ##
+## Reflection
 
-**Step 1:** Set up the [CarND Term1 Starter Kit](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/83ec35ee-1e02-48a5-bdb7-d244bd47c2dc/lessons/8c82408b-a217-4d09-b81d-1bda4c6380ef/concepts/4f1870e0-3849-43e4-b670-12e6f2d4b7a7) if you haven't already.
+### 1. Description of the pipeline
+The pipeline is developed around the helper/wrapper functions provided by Udacity as a part of the workspace. The pipeline steps would be illustrated with the following image:
+![Reference Image](./examples/solidWhiteRight.jpg)
 
-**Step 2:** Open the code in a Jupyter Notebook
+My pipeline consisted of the following sequential steps:
+1. First, the input images are converted to grayscale
+![Grayscale](./examples/grayscale.jpg)
 
-You will complete the project code in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out <A HREF="https://www.packtpub.com/books/content/basics-jupyter-notebook-and-python" target="_blank">Cyrille Rossant's Basics of Jupyter Notebook and Python</A> to get started.
+2. Next, a gaussian blurring is applied to reduce some spurious edges, thereby reducing the amount of noise present in the image. 
+![Gaussian Blur](./examples/gaussian_blur.jpg)
 
-Jupyter is an Ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, use terminal to navigate to your project directory and then run the following command at the terminal prompt (be sure you've activated your Python 3 carnd-term1 environment as described in the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) installation instructions!):
+3. After this, the Canny transform is applied to get the gradient edges. The thresholds for the gradients and the kernel size were anchored on the values which was discussed in the course. The traffic scenario and the color scheme looked very similar to the image discussed in the course
+![Canny Transform](./examples/edges.jpg)
 
-`> jupyter notebook`
+4. A trapeziodal region at the lower center of the image was defined to mask out the lanes. By analysing (trial and error method) the given images and videos, a lit of padding was added and removed to the trapezoid to get the best possible region of interest.
+![Region of Interest](./examples/masked_edges.jpg)
 
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
+5. A Hough transform is applied on the masked edges. The parameters were determined based on the trial and error method. The length of longer lane segments in the images were used as an anhoring point to decide `min_line_length` and `max_line_gap` .
+![Hough Transform](./examples/lines.jpg)
 
-**Step 3:** Complete the project and submit both the Ipython notebook and the project writeup
+6. The resulting straight lines from the Hough transform are blended into the source image to derive the target image.
+![Hough Transform](./examples/edges_result.jpg)
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+7. In the next improvement step, the lane segments highlighted in the left lane and right lane are drawn as single line in the `draw_lines_extended` function. 
+- The end points (x1, y1, x2, y2) of each line segments from the hough tranform are consolidated in separate arrays. Based on the direction of the slope, the points are clustered in seperate arrays. 
+- Using `cv2.polyfit` , the slope and y-intercept for the left lane and right lane are derived
+- A straight line is drawn from the left bottom to the top left point (which is modelled from the slope and the y-intercept derived from the previous step)
+- A similar line is drawn for the right lane.
+- A sample output from the above function:
+![Final Result](./examples/final_result.jpg)
 
-=======
-# Finding Lane lines in a video stream
-Project work for Udacity Program - Self-Driving Car Engineer
+---
+### 2. Identify potential shortcomings with your current pipeline
 
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+1. The paramters for Canny and Hough Transforms were derived based on a trial and error approach. The functions performance is therefor not scable for a wider use-cases.
+2. The region of interest (ROI) is also a fixed region. When the image resolution changes, the ROI needs to be adapted. 
+3. When detecting the lanes, i used a straight line fit for modelling the points. This is not practical in many road scenarios. As seen in the challenge.mp4, the function performs poorly around corner or when the camera sees  the lanes from a different angle. So the function is not robust enough for typical driving scenarios.
 
-___
-TODO:
+### 3. Suggest possible improvements to your pipeline
 
-1. an overview of the project
-2. a list of files contained in the repository with a brief description of each file
-3. any instructions someone might need for running your code
-___
->>>>>>> 4c7d0f85755a271fb4e2fbc6c7e7e14853fc029c
+1. A possible improvement would be to improve the robbustness of the curve fitting model. Instead of a first degree polynomial, i would fit a second degree polynomial.
+2. Another potential improvement could be the use GUI helper tools to make the parameter fitting more robust. As suggested in the class notes, I would develop a tool like the [one developed by Maunesh Ahir](https://www.youtube.com/watch?v=xdiekchp-Uc)
+3. Last but not least, I would need to find a way to automatically estimate the region of interest based on the image resolution and the road scenario. There should be a better way than the hard-coded trapezoid.
